@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 import torch
 import numpy as np
 
-def generate_circle_image(radius, brightness, size=(16, 16)):
+def generate_circle_image(radius_x,radius_y,center, brightness, size):
     """Generate a circle image with the given radius and brightness
     
     Args:
@@ -19,15 +19,15 @@ def generate_circle_image(radius, brightness, size=(16, 16)):
     draw = ImageDraw.Draw(image)
 
     # Calculate the center coordinates
-    center = (size[0]//2, size[1]//2)
+    # center = (size[0]//2, size[1]//2)
 
     # Draw the circle
     draw.ellipse(
         (
-            center[0] - radius,
-            center[1] - radius,
-            center[0] + radius,
-            center[1] + radius,
+            center[0] - radius_x,
+            center[1] - radius_y,
+            center[0] + radius_x,
+            center[1] + radius_y,
         ),
         fill=int(brightness),
     )
@@ -45,6 +45,24 @@ class P_Radius:
     def log_prob(self, f):
         return self.p.log_prob(f)
    
+class P_Center:
+
+    def __init__(self, image_size, radius):
+        up = image_size - radius[0]
+        down = radius[0]
+        left  = image_size - radius[1]
+        right  = radius[1]
+        
+        self.p_x = Uniform(down, up)
+        self.p_y = Uniform(right, left)
+
+    def sample(self):
+        return (self.p_x.sample(),self.p_y.sample())
+
+    def log_prob(self, f):
+        p_xy_log = self.p_x.log_prob(f[0]) + self.p_y.log_prob(f[1])
+        return p_xy_log 
+
 
 class P_Brightness:
     """Probability distribution over cell brightness"""
@@ -65,8 +83,8 @@ class P_X_under_F:
         brightness (0<float<255): The brightness of the circle
         std (float): The standard deviation of the Gaussian noise
     """
-    def __init__(self, radius, brightness, std):
-        circle = generate_circle_image(radius, brightness)
+    def __init__(self, radius_x,radius_y, center, brightness, std, size):
+        circle = generate_circle_image(radius_x,radius_y, center, brightness, size)
         std = torch.Tensor([std])
         self.p = Normal(loc=circle, scale=std)
 
@@ -87,15 +105,19 @@ class P_F_under_X:
         p_radius (P_Radius): Probability distribution over cell radius
         p_brightness (P_Brightness): Probability distribution over cell brightness
     """
-    def __init__(self, p_x_under_f, p_radius, p_brightness):
+    def __init__(self, p_x_under_f, p_radius_x, p_radius_y, p_center, p_brightness):
         self.p_x_given_f = p_x_under_f
-        self.p_radius = p_radius
+        self.p_radius_x = p_radius_x
+        self.p_radius_y = p_radius_y
         self.p_brightness = p_brightness
+        self.p_center = p_center
 
-    def loglikelihood(self, x, radius, brightness):
-        pradius = self.p_radius.log_prob(radius)
+    def loglikelihood(self, x, radius_x, radius_y, center, brightness):
+        pradius_x = self.p_radius_x.log_prob(radius_x)
+        pradius_y = self.p_radius_y.log_prob(radius_y)
         pbrightness = self.p_brightness.log_prob(brightness)
-        pf = pradius + pbrightness
+        pcenter = self.p_center.log_prob(center)
+        pf = pradius_x + pradius_y + pbrightness + pcenter
         pxf = self.p_x_given_f.log_prob(x)
         pxf = torch.sum(pxf, dim=(-2, -1))
         return pf + pxf
