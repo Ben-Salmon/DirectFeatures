@@ -13,11 +13,10 @@ class Dataset(torch.utils.data.Dataset):
         brightness (list): List of brightness values.
     """
 
-    def __init__(self, x, radius, center, brightness):
+    def __init__(self, x, radius, brightness):
         self.x = x
         self.radius = radius
         self.brightness = brightness
-        self.center = center
 
     def __len__(self):
         """
@@ -40,7 +39,6 @@ class Dataset(torch.utils.data.Dataset):
         """
         x = self.x[idx][None]
         radius = self.radius[idx]
-        center = self.center[idx]
         brightness = self.brightness[idx]
-        f = torch.stack((radius[0], radius[1], center[0], center[1], brightness), dim=0)
+        f = torch.stack((radius[0], radius[1], brightness), dim=0)
         return x, f
