@@ -54,13 +54,25 @@ def val_epoch(model, val_loader, device):
         x_test = x_batch[:1]
         pfx_test = model.get_p_f_under_x(x_test)
 
-        radius_locs = pfx_test.component_distribution.loc[:, 0].cpu().numpy()
-        radius_scales = pfx_test.component_distribution.scale[:, 0].cpu().numpy()
-        radius_coeffs = pfx_test.mixture_distribution.probs[:, 0].cpu().numpy()
+        radiusx_locs = pfx_test.component_distribution.loc[:, 0].cpu().numpy()
+        radiusx_scales = pfx_test.component_distribution.scale[:, 0].cpu().numpy()
+        radiusx_coeffs = pfx_test.mixture_distribution.probs[:, 0].cpu().numpy()
 
-        brightness_locs = pfx_test.component_distribution.loc[:, 1].cpu().numpy()
-        brightness_scales = pfx_test.component_distribution.scale[:, 1].cpu().numpy()
-        brightness_coeffs = pfx_test.mixture_distribution.probs[:, 1].cpu().numpy()
+        radiusy_locs = pfx_test.component_distribution.loc[:, 1].cpu().numpy()
+        radiusy_scales = pfx_test.component_distribution.scale[:, 1].cpu().numpy()
+        radiusy_coeffs = pfx_test.mixture_distribution.probs[:, 1].cpu().numpy()
+
+        centerx_locs = pfx_test.component_distribution.loc[:, 2].cpu().numpy()
+        centerx_scales = pfx_test.component_distribution.scale[:, 2].cpu().numpy()
+        centerx_coeffs = pfx_test.mixture_distribution.probs[:, 2].cpu().numpy()
+        
+        centery_locs = pfx_test.component_distribution.loc[:, 3].cpu().numpy()
+        centery_scales = pfx_test.component_distribution.scale[:, 3].cpu().numpy()
+        centery_coeffs = pfx_test.mixture_distribution.probs[:, 3].cpu().numpy()
+
+        brightness_locs = pfx_test.component_distribution.loc[:, 4].cpu().numpy()
+        brightness_scales = pfx_test.component_distribution.scale[:, 4].cpu().numpy()
+        brightness_coeffs = pfx_test.mixture_distribution.probs[:, 4].cpu().numpy()
         
         # Run subplots
         domains = []
@@ -70,13 +82,36 @@ def val_epoch(model, val_loader, device):
         #Radius
         ymin = 0
         ymax = 0.2
-        domain = np.linspace(0, 8, 1000) # Possible radius values
-        y_total = gen_gmm_pdf(radius_locs, radius_scales, radius_coeffs, n_gaussians=model.n_gaussians, domain=domain)
+        domain = np.linspace(0, x_batch.size(-1)/2, 1000) # Possible radius values
+        y_total = gen_gmm_pdf(radiusx_locs, radiusx_scales, radiusx_coeffs, n_gaussians=model.n_gaussians, domain=domain)
         vis_data.append(y_total)
         domains.append(domain)
         ymins.append(ymin)
         ymaxs.append(ymax)
-        titles.append("Radius")
+        titles.append("Radius X")
+        #Radius
+        y_total = gen_gmm_pdf(radiusy_locs, radiusy_scales, radiusy_coeffs, n_gaussians=model.n_gaussians, domain=domain)
+        vis_data.append(y_total)
+        domains.append(domain)
+        ymins.append(ymin)
+        ymaxs.append(ymax)
+        titles.append("Radius Y")
+        #Center X
+        ymax = 0.2
+        domain = np.linspace(0, x_batch.size(-1), 1000) # Possible center values
+        y_total = gen_gmm_pdf(centerx_locs, centerx_scales, centerx_coeffs, n_gaussians=model.n_gaussians, domain=domain)
+        vis_data.append(y_total)
+        domains.append(domain)
+        ymins.append(ymin)
+        ymaxs.append(ymax)
+        titles.append("Center X")
+        #Center Y
+        y_total = gen_gmm_pdf(centery_locs, centery_scales, centery_coeffs, n_gaussians=model.n_gaussians, domain=domain)
+        vis_data.append(y_total)
+        domains.append(domain)
+        ymins.append(ymin)
+        ymaxs.append(ymax)
+        titles.append("Center Y")
         #Brightness
         ymin = 0
         ymax = 0.02

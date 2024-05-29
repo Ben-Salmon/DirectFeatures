@@ -12,7 +12,7 @@ class CNN(nn.Module):
         n_gaussians (int): The number of Gaussian components in the mixture model for each feature
         n_features (int): The number of fluorescence features in the output
     """
-    def __init__(self, n_filters, x_mean, x_std, img_size=(16, 16), n_gaussians=1, n_features=2):
+    def __init__(self, n_filters, x_mean, x_std, img_size=(16, 16), n_gaussians=1, n_features=5):
         super(CNN, self).__init__()
         self.x_mean = x_mean
         self.x_std = x_std
